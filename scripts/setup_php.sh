@@ -55,10 +55,9 @@ done
 # Install selected versions and modules
 for ver in $versions; do
   echo "Installing PHP $ver..."
-  apt install -y php$ver php$ver-cli php$ver-fpm
-  for mod in $MODULES_TO_INSTALL; do
-    apt install -y php$ver-$mod
-  done
+  # Install all packages in one command to avoid repeated restarts
+  apt install -y php$ver php$ver-cli php$ver-fpm php$ver-${MODULES_TO_INSTALL// / php$ver-}
 done
+
 
 echo "PHP installation complete."   
