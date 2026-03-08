@@ -37,6 +37,13 @@ systemctl is-active --quiet nginx && prompt_rule "Nginx" "Nginx Full"
 systemctl is-active --quiet mysql && prompt_rule "MySQL" "3306"
 systemctl is-active --quiet vsftpd && prompt_rule "FTP" "21/tcp"
 
+# Disable UFW logging to console
+if [ -f /etc/rsyslog.d/20-ufw.conf ]; then
+  sed -i 's/^#& stop/& stop/' /etc/rsyslog.d/20-ufw.conf
+  systemctl restart rsyslog
+  RESULTS+=("✅ UFW console logging disabled.")
+fi
+
 # Enable UFW after rules are set
 ufw --force enable
 ufw reload
@@ -48,4 +55,5 @@ for result in "${RESULTS[@]}"; do
   echo "$result"
 done
 echo "======================================"
+
 echo "Firewall configuration complete."   
