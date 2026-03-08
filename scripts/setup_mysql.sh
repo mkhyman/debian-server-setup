@@ -19,8 +19,8 @@ if [ "$ADMINPASS" != "$ADMINPASS_CONFIRM" ]; then
   exit 1
 fi
 
-# Prompt for MySQL root password (separate)
-read -sp "Enter password for MySQL root: " ROOTPASS
+# Prompt for MariaDB root password (separate)
+read -sp "Enter password for MariaDB root: " ROOTPASS
 echo
 read -sp "Confirm root password: " ROOTPASS_CONFIRM
 echo
@@ -35,18 +35,18 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 # Pre-seed root password for installation
-echo "mysql-server mysql-server/root_password password $ROOTPASS" | debconf-set-selections
-echo "mysql-server mysql-server/root_password_again password $ROOTPASS" | debconf-set-selections
+echo "mariadb-server mariadb/root_password password $ROOTPASS" | debconf-set-selections
+echo "mariadb-server mariadb/root_password_again password $ROOTPASS" | debconf-set-selections
 
-# Install MySQL
+# Install MariaDB
 apt update
-apt install -y mysql-server
+apt install -y mariadb-server
 
-# Configure MySQL to allow remote connections
-sed -i "s/^bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mysql.conf.d/mysqld.cnf
+# Configure MariaDB to allow remote connections
+sed -i "s/^bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mariadb.conf.d/50-server.cnf
 
-# Restart MySQL
-systemctl restart mysql
+# Restart MariaDB
+systemctl restart mariadb
 
 # Create mysqladmin user with remote access
 mysql -u root -p"$ROOTPASS" <<MYSQL_SCRIPT
@@ -60,4 +60,4 @@ MYSQL_SCRIPT
 # Allow port 3306 in firewall
 ufw allow 3306 2>/dev/null || echo "UFW not installed, skipping firewall setup."
 
-echo "MySQL installed. Remote access enabled for mysqladmin. Root remote access disabled. Root password set."   
+echo "MariaDB installed. Remote access enabled for mysqladmin. Root remote access disabled. Root password set."   
