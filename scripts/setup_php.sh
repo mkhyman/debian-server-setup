@@ -20,6 +20,15 @@ if [[ ! "$DISTRO" =~ ^(ubuntu|debian)$ ]]; then
   exit 1
 fi
 
+# Save current systemd defaults
+echo "Saving current systemd defaults..."
+CURRENT_INTERVAL=$(systemctl show --property=DefaultStartLimitIntervalSec)
+CURRENT_BURST=$(systemctl show --property=DefaultStartLimitBurst)
+
+# Disable rate limiting during installation
+echo "Disabling systemd start limits to prevent restart throttling..."
+systemctl set-property --runtime -- system DefaultStartLimitIntervalSec=0 DefaultStartLimitBurst=0
+
 # Show installed versions
 echo "=== Installed PHP versions ==="
 dpkg -l | grep -E '^ii' | grep -o 'php[0-9]\.[0-9]' | sort -u || echo "None"
@@ -59,5 +68,8 @@ for ver in $versions; do
   apt install -y php$ver php$ver-cli php$ver-fpm php$ver-${MODULES_TO_INSTALL// / php$ver-}
 done
 
+# Restore original systemd defaults
+echo "Restoring original systemd defaults..."
+systemctl set-property --runtime -- system "$CURRENT_INTERVAL" "$CURRENT_BURST"
 
 echo "PHP installation complete."   
