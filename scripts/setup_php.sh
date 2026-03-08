@@ -65,7 +65,7 @@ done
 # Install selected versions and modules
 for ver in $versions; do
   echo "Installing PHP $ver..."
-  apt install -y php$ver php$ver-cli php$ver-fpm php$ver-${MODULES_TO_INSTALL// / php$ver-}
+  apt install -y --allow-change-held-packages php$ver php$ver-cli php$ver-fpm php$ver-${MODULES_TO_INSTALL// / php$ver-}
 done
 
 # Restore original systemd defaults
@@ -74,3 +74,4 @@ rm -f /etc/systemd/system.conf.d/php-install-temp.conf
 systemctl daemon-reload
 
 echo "PHP installation complete."   
+
