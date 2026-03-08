@@ -41,4 +41,6 @@ chmod +x setup_server.sh
 
 run setup_server.sh
 
-## Known issues need to convert line endings to unix
+## Known issues  
+
+need to convert line endings to unix
