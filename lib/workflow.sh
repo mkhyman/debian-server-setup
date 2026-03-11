@@ -1,92 +1,153 @@
 #!/usr/bin/env bash
 
-# Current workflow
-CURRENT_WORKFLOW_STEPS=()   # Array of step types
-CURRENT_WORKFLOW_TEXTS=()   # Array of messages to display
-CURRENT_WORKFLOW_HANDLERS=() # Array of functions to handle responses
+#################################
+# WORKFLOW STATE
+#################################
+
+CURRENT_WORKFLOW_STEPS=()
+CURRENT_WORKFLOW_TEXTS=()
+CURRENT_WORKFLOW_HANDLERS=()
+CURRENT_WORKFLOW_ALLOWED=()
 CURRENT_WORKFLOW_INDEX=0
+WORKFLOW_ACTIVE=0
 
-# Prompt buffer
-PROMPT_BUFFER=""
-INPUT_MODE="normal"
+#################################
+# START / END
+#################################
 
-# Initialize a workflow
 workflow_start() {
     local steps_array="$1[@]"
     local texts_array="$2[@]"
     local handlers_array="$3[@]"
+    local allowed_array="$4[@]"
 
     CURRENT_WORKFLOW_STEPS=("${!steps_array}")
     CURRENT_WORKFLOW_TEXTS=("${!texts_array}")
     CURRENT_WORKFLOW_HANDLERS=("${!handlers_array}")
+    CURRENT_WORKFLOW_ALLOWED=("${!allowed_array}")
     CURRENT_WORKFLOW_INDEX=0
+    WORKFLOW_ACTIVE=1
 
     workflow_next_step
 }
 
-# Advance to next step
+workflow_clear() {
+    CURRENT_WORKFLOW_STEPS=()
+    CURRENT_WORKFLOW_TEXTS=()
+    CURRENT_WORKFLOW_HANDLERS=()
+    CURRENT_WORKFLOW_ALLOWED=()
+    CURRENT_WORKFLOW_INDEX=0
+    WORKFLOW_ACTIVE=0
+}
+
+#################################
+# ADVANCE TO NEXT STEP
+#################################
+
 workflow_next_step() {
-    if (( CURRENT_WORKFLOW_INDEX >= ${#CURRENT_WORKFLOW_STEPS[@]} )); then
-        INPUT_MODE="normal"
-        CURRENT_WORKFLOW_STEPS=()
-        CURRENT_WORKFLOW_TEXTS=()
-        CURRENT_WORKFLOW_HANDLERS=()
+    local step_type
+    local step_text
+    local step_handler
+    local step_allowed
+
+    if (( WORKFLOW_ACTIVE == 0 )); then
         return
     fi
 
-    local step_type="${CURRENT_WORKFLOW_STEPS[CURRENT_WORKFLOW_INDEX]}"
-    local message="${CURRENT_WORKFLOW_TEXTS[CURRENT_WORKFLOW_INDEX]}"
-    local handler="${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}"
-    local allowed="${CURRENT_WORKFLOW_ALLOWED[$CURRENT_WORKFLOW_INDEX]}"  # only for choice
+    if (( CURRENT_WORKFLOW_INDEX >= ${#CURRENT_WORKFLOW_STEPS[@]} )); then
+        workflow_clear
+        return
+    fi
+
+    step_type="${CURRENT_WORKFLOW_STEPS[CURRENT_WORKFLOW_INDEX]}"
+    step_text="${CURRENT_WORKFLOW_TEXTS[CURRENT_WORKFLOW_INDEX]}"
+    step_handler="${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}"
+    step_allowed="${CURRENT_WORKFLOW_ALLOWED[CURRENT_WORKFLOW_INDEX]}"
 
     case "$step_type" in
-        "prompt")
-            INPUT_MODE="prompt"
-            PROMPT_HANDLER="$handler"
-            PROMPT_BUFFER=""
-            pane_append 3 "$message "
+        prompt)
+            start_prompt "$step_text" "workflow_prompt_result"
             ;;
-        "choice")
-            INPUT_MODE="choice"
-            CHOICE_HANDLER="$handler"
-            CHOICE_ALLOWED="$allowed"
-            pane_append 3 "$message ($allowed) "
+
+        choice)
+            start_choice "$step_text" "$step_allowed" "workflow_choice_result"
             ;;
-        "display")
-            pane_append 3 "$message"
-            ((CURRENT_WORKFLOW_INDEX++))
+
+        display)
+            if [[ -n "$step_text" ]]; then
+                pane_append 3 "$step_text"
+            fi
+
+            if [[ -n "$step_handler" ]]; then
+                "$step_handler"
+            fi
+
+            if (( WORKFLOW_ACTIVE == 0 )); then
+                return
+            fi
+
+            (( CURRENT_WORKFLOW_INDEX++ ))
             workflow_next_step
+            ;;
+
+        *)
+            pane_append 3 "Workflow error: unknown step type '$step_type'"
+            workflow_clear
             ;;
     esac
 }
 
-# Generic prompt handler for workflows
-workflow_choice_handler() {
-    local input="$1"
-    local allowed="$2"  # string containing valid choices, e.g., "YyNn"
+#################################
+# RESULT HANDLERS CALLED BY
+# start_prompt / start_choice
+#################################
 
-    # If input is not in allowed choices, ignore
-    if [[ "$allowed" != *"$input"* ]]; then
+workflow_prompt_result() {
+    local value="$1"
+    local step_handler
+
+    if (( WORKFLOW_ACTIVE == 0 )); then
         return
     fi
 
-    # Call the step-specific handler
-    if [[ -n "${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}" ]]; then
-        "${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}" "$input"
+    step_handler="${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}"
+
+    if [[ -n "$step_handler" ]]; then
+        "$step_handler" "$value"
+    fi
+
+    if (( WORKFLOW_ACTIVE == 0 )); then
+        return
     fi
 
     ((CURRENT_WORKFLOW_INDEX++))
     workflow_next_step
 }
 
-# Generic confirmation handler for workflows
-workflow_confirmation_handler() {
-    local answer="$1"
+workflow_choice_result() {
+    local value="$1"
+    local step_handler
 
-    if [[ -n "${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}" ]]; then
-        "${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}" "$answer"
+    if (( WORKFLOW_ACTIVE == 0 )); then
+        return
+    fi
+
+    step_handler="${CURRENT_WORKFLOW_HANDLERS[CURRENT_WORKFLOW_INDEX]}"
+
+    if [[ -n "$step_handler" ]]; then
+        "$step_handler" "$value"
+    fi
+
+    if (( WORKFLOW_ACTIVE == 0 )); then
+        return
     fi
 
     ((CURRENT_WORKFLOW_INDEX++))
     workflow_next_step
+}
+
+# useful for workflows to abort with a message
+workflow_abort() {
+    pane_append 3 "$1"
+    workflow_clear
 }

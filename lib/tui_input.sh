@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Prompt buffer
+PROMPT_BUFFER=""
+INPUT_MODE="normal"
+
 handle_normal_key() {
     local key="$1"
     local bottom_pane=3  # index of scrollable pane
@@ -32,6 +36,10 @@ handle_normal_key() {
         [Qq])
             quit_application
             ;;
+
+		w)
+			start_test_workflow
+			;;
     esac
 }
 

@@ -3,6 +3,7 @@
 source lib/tui_panes.sh
 source lib/tui_input.sh  # contains read_key
 source lib/workflow.sh
+source test_workflow.sh
 
 # -----------------------------
 # CLEANUP FUNCTION
