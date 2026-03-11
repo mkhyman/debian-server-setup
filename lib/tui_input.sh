@@ -37,37 +37,88 @@ handle_normal_key() {
 
 handle_prompt_key() {
     local key="$1"
+    local handler
+    local value
 
-    if [[ $key == $'\r' ]]; then  # Enter key
-        if [[ -n "$PROMPT_HANDLER" ]]; then
-            "$PROMPT_HANDLER" "$PROMPT_BUFFER"
-        fi
+    if [[ -z "$key" || "$key" == $'\r' || "$key" == $'\n' ]]; then
+        handler="$PROMPT_HANDLER"
+        value="$PROMPT_BUFFER"
+
+        # Leave prompt mode first
         PROMPT_BUFFER=""
         PROMPT_HANDLER=""
+        PROMPT_TEXT=""
         INPUT_MODE="normal"
+
+        # Now run callback in normal mode
+        if [[ -n "$handler" ]]; then
+            "$handler" "$value"
+        fi
         return
     fi
 
-    # Append typed character to buffer
-    PROMPT_BUFFER+="$key"
+    if [[ "$key" == $'\177' || "$key" == $'\010' ]]; then
+        PROMPT_BUFFER="${PROMPT_BUFFER%?}"
+    else
+        PROMPT_BUFFER+="$key"
+    fi
 
-    # Append to bottom pane, auto-scroll if needed
-    pane_append 3 "$PROMPT_BUFFER"
+    pane_print_line 3 "$PROMPT_ROW" "${PROMPT_TEXT}${PROMPT_BUFFER}"
 }
 
 handle_choice_key() {
     local key="$1"
+    local handler
 
-    # Only accept input if in allowed set
-    if [[ "$CHOICE_ALLOWED" == *"$key"* ]]; then
-        if [[ -n "$CHOICE_HANDLER" ]]; then
-            workflow_choice_handler "$key" "$CHOICE_ALLOWED"
-        fi
-        # Reset handler and return to normal mode
-        CHOICE_HANDLER=""
-        CHOICE_ALLOWED=""
-        INPUT_MODE="normal"
+    case "$key" in
+        [A-Z])
+            key=$(printf "%s" "$key" | tr 'A-Z' 'a-z')
+            ;;
+    esac
+
+    if [[ "$CHOICE_ALLOWED" != *"$key"* ]]; then
+        return
     fi
+
+    # Save handler before clearing state
+    handler="$CHOICE_HANDLER"
+
+    # Leave choice mode first
+    CHOICE_HANDLER=""
+    CHOICE_ALLOWED=""
+    INPUT_MODE="normal"
+
+    # Now call handler in normal mode
+    if [[ -n "$handler" ]]; then
+        "$handler" "$key"
+    fi
+}
+
+#usage: start_prompt "Enter name: " prompt_handler
+start_prompt() {
+    local prompt_text="$1"
+    local prompt_handler="$2"
+
+    INPUT_MODE="prompt"
+    PROMPT_BUFFER=""
+    PROMPT_HANDLER="$prompt_handler"
+    PROMPT_TEXT="$prompt_text"
+
+    pane_append 3 "$PROMPT_TEXT"
+    PROMPT_ROW=${PANE_CURSOR[3]}
+}
+
+#usage: start_choice "Choose option: " "abc" choice_handler
+start_choice() {
+    local choice_text="$1"
+    local choice_allowed="$2"
+    local choice_handler="$3"
+
+    INPUT_MODE="choice"
+    CHOICE_ALLOWED="$choice_allowed"
+    CHOICE_HANDLER="$choice_handler"
+
+    pane_append 3 "$choice_text"
 }
 
 read_key() {

@@ -34,27 +34,8 @@ tput clear
 setup_panes
 pane_draw_all
 
-pane_append 0 "SYSTEM PANE (static)"
-pane_append 1 "MENU PANE (static)"
-pane_append 2 "INFO PANE (static)"
-pane_append 3 "BOTTOM PANE (scrollable) 1"
-pane_append 3 "BOTTOM PANE (scrollable) 2"
-pane_append 3 "BOTTOM PANE (scrollable) 3"
-pane_append 3 "BOTTOM PANE (scrollable) 4"
-pane_append 3 "BOTTOM PANE (scrollable) 5"
-pane_append 3 $'Multi line test\nLine two\nLine three'
-pane_append 3 "BOTTOM PANE (scrollable) 6"
-pane_append 3 "BOTTOM PANE (scrollable) 7"
-
-#for i in $(seq 1 200); do
- #   pane_append 3 "stress line $i"
-#done
-
-
-
-prompt_done() {
-    pane_append 3 "Name entered: $1"
-    INPUT_MODE="normal"
+quit_application() {
+    exit 0
 }
 
 # Counter for dynamic log lines
