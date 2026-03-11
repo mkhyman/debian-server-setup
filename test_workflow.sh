@@ -1,54 +1,32 @@
 #!/usr/bin/env bash
 
 #################################
-# TEST WORKFLOW DATA
+# TEST WORKFLOW STATE
 #################################
 
 TEST_WORKFLOW_USERNAME=""
 TEST_WORKFLOW_COLOUR=""
 
 #################################
-# TEST WORKFLOW STEP DEFINITIONS
+# TEST WORKFLOW DEFINITION
+#
+# Format:
+#   type|text|handler|allowed
+#
+# type:
+#   prompt
+#   choice
+#   display
 #################################
 
-TEST_WORKFLOW_STEPS=(
-    "prompt"
-    "prompt"
-    "display"
-    "display"
-    "choice"
-    "display"
-    "display"
-)
-
-TEST_WORKFLOW_TEXTS=(
-    "Enter username: "
-    "Enter favourite colour: "
-    ""
-    ""
-    "Would u like to delete user? (y/n)"
-    ""
-    ""
-)
-
-TEST_WORKFLOW_HANDLERS=(
-    "test_workflow_set_username"
-    "test_workflow_set_colour"
-    "test_workflow_display_selected_username"
-    "test_workflow_check_user_exists"
-    "test_workflow_confirm_delete"
-    "test_workflow_display_deleted"
-    "test_workflow_display_summary"
-)
-
-TEST_WORKFLOW_ALLOWED=(
-    ""
-    ""
-    ""
-    ""
-    "yn"
-    ""
-    ""
+TEST_WORKFLOW=(
+    "prompt|Enter username: |test_workflow_set_username|"
+    "prompt|Enter favourite colour: |test_workflow_set_colour|"
+    "display||test_workflow_display_selected_username|"
+    "display||test_workflow_check_user_exists|"
+    "choice|Would u like to delete user? (y/n)|test_workflow_confirm_delete|yn"
+    "display||test_workflow_display_deleted|"
+    "display||test_workflow_display_summary|"
 )
 
 #################################
@@ -69,8 +47,7 @@ test_workflow_display_selected_username() {
 
 test_workflow_check_user_exists() {
     if ! id "$TEST_WORKFLOW_USERNAME" >/dev/null 2>&1; then
-        pane_append 3 "user not found"
-        workflow_end
+        workflow_abort "user not found"
     fi
 }
 
@@ -79,11 +56,9 @@ test_workflow_confirm_delete() {
 
     case "$answer" in
         y)
-            # continue to next step
             ;;
         n)
-            pane_append 3 "user not deleted"
-            workflow_end
+            workflow_abort "user not deleted"
             ;;
     esac
 }
@@ -105,9 +80,5 @@ start_test_workflow() {
     TEST_WORKFLOW_USERNAME=""
     TEST_WORKFLOW_COLOUR=""
 
-    workflow_start \
-        TEST_WORKFLOW_STEPS \
-        TEST_WORKFLOW_TEXTS \
-        TEST_WORKFLOW_HANDLERS \
-        TEST_WORKFLOW_ALLOWED
+    workflow_start TEST_WORKFLOW
 }
