@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 
+INPUT_MODE="normal"
+
 # Prompt buffer
 PROMPT_BUFFER=""
-INPUT_MODE="normal"
+PROMPT_HANDLER=""
+PROMPT_TEXT=""
+PROMPT_ROW=""
+PROMPT_BUFFER_LINE=""
+
+CHOICE_HANDLER=""
+CHOICE_ALLOWED=""
+CHOICE_TEXT=""
+CHOICE_ROW=""
+CHOICE_BUFFER_LINE=""
 
 handle_normal_key() {
     local key="$1"
@@ -47,18 +58,22 @@ handle_prompt_key() {
     local key="$1"
     local handler
     local value
+    local final_text
 
     if [[ -z "$key" || "$key" == $'\r' || "$key" == $'\n' ]]; then
         handler="$PROMPT_HANDLER"
         value="$PROMPT_BUFFER"
+        final_text="${PROMPT_TEXT}${PROMPT_BUFFER}"
 
-        # Leave prompt mode first
+        pane_replace_line 3 "$PROMPT_BUFFER_LINE" "$final_text"
+
         PROMPT_BUFFER=""
         PROMPT_HANDLER=""
         PROMPT_TEXT=""
+        PROMPT_ROW=""
+        PROMPT_BUFFER_LINE=""
         INPUT_MODE="normal"
 
-        # Now run callback in normal mode
         if [[ -n "$handler" ]]; then
             "$handler" "$value"
         fi
@@ -77,6 +92,7 @@ handle_prompt_key() {
 handle_choice_key() {
     local key="$1"
     local handler
+    local final_text
 
     case "$key" in
         [A-Z])
@@ -88,15 +104,18 @@ handle_choice_key() {
         return
     fi
 
-    # Save handler before clearing state
     handler="$CHOICE_HANDLER"
+    final_text="${CHOICE_TEXT} -> $key"
 
-    # Leave choice mode first
+    pane_replace_line 3 "$CHOICE_BUFFER_LINE" "$final_text"
+
     CHOICE_HANDLER=""
     CHOICE_ALLOWED=""
+    CHOICE_TEXT=""
+    CHOICE_ROW=""
+    CHOICE_BUFFER_LINE=""
     INPUT_MODE="normal"
 
-    # Now call handler in normal mode
     if [[ -n "$handler" ]]; then
         "$handler" "$key"
     fi
@@ -113,7 +132,9 @@ start_prompt() {
     PROMPT_TEXT="$prompt_text"
 
     pane_append 3 "$PROMPT_TEXT"
+
     PROMPT_ROW=${PANE_CURSOR[3]}
+    PROMPT_BUFFER_LINE=$(( $(pane_line_count 3) - 1 ))
 }
 
 #usage: start_choice "Choose option: " "abc" choice_handler
@@ -125,8 +146,12 @@ start_choice() {
     INPUT_MODE="choice"
     CHOICE_ALLOWED="$choice_allowed"
     CHOICE_HANDLER="$choice_handler"
+    CHOICE_TEXT="$choice_text"
 
-    pane_append 3 "$choice_text"
+    pane_append 3 "$CHOICE_TEXT"
+
+    CHOICE_ROW=${PANE_CURSOR[3]}
+    CHOICE_BUFFER_LINE=$(( $(pane_line_count 3) - 1 ))
 }
 
 read_key() {

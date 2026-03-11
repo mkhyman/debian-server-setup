@@ -158,6 +158,49 @@ pane_append() {
     done
 }
 
+pane_replace_line() {
+    local id=$1
+    local target_index=$2
+    local text="$3"
+
+    local lines=()
+    local line
+    local i
+
+    while IFS= read -r line; do
+        lines+=("$line")
+    done < <(printf '%s' "${PANE_BUFFER[$id]}")
+
+    if (( target_index < 0 )); then
+        return 1
+    fi
+
+    if (( target_index >= ${#lines[@]} )); then
+        return 1
+    fi
+
+    lines[$target_index]="$text"
+
+    PANE_BUFFER[$id]=""
+    for ((i=0; i<${#lines[@]}; i++)); do
+        PANE_BUFFER[$id]+="${lines[$i]}"$'\n'
+    done
+
+    return 0
+}
+
+pane_line_count() {
+    local id=$1
+    local count=0
+    local line
+
+    while IFS= read -r line; do
+        count=$((count + 1))
+    done < <(printf '%s' "${PANE_BUFFER[$id]}")
+
+    printf '%s' "$count"
+}
+
 #################################
 # SCROLLING
 #################################
