@@ -2,8 +2,13 @@
 
 source lib/tui_panes.sh
 source lib/tui_input.sh  # contains read_key
+source lib/tui_menu.sh
 source lib/workflow.sh
 source test_workflow.sh
+
+source menu/main_menu.sh
+source menu/user_menu.sh
+source menu/application_menu.sh
 
 # -----------------------------
 # CLEANUP FUNCTION
@@ -34,6 +39,8 @@ tput clear
 # -----------------------------
 setup_panes
 pane_draw_all
+
+menu_init "MAIN"
 
 quit_application() {
     exit 0

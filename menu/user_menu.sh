@@ -1,0 +1,3 @@
+MENU_USER_TITLE="User Menu"
+MENU_USER_ITEMS=(
+)

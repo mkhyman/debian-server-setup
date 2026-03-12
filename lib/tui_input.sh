@@ -22,30 +22,20 @@ handle_normal_key() {
     case "$key" in
         # Bottom pane scrolling
         $'\e[A')  # Up arrow
-            if (( PANE_SCROLL[bottom_pane] > 0 )); then
-                ((PANE_SCROLL[bottom_pane]--))
-                pane_draw "$bottom_pane"
-            fi
+            pane_scroll_up "$bottom_pane"
             ;;
         $'\e[B')  # Down arrow
-            local total=0 tmp
-            local IFS=$'\n'
-            while read -r tmp; do ((total++)); done <<< "${PANE_BUFFER[bottom_pane]}"
-            local max_scroll=$(( total - PANE_HEIGHT[bottom_pane] ))
-            if (( PANE_SCROLL[bottom_pane] < max_scroll )); then
-                ((PANE_SCROLL[bottom_pane]++))
-                pane_draw "$bottom_pane"
-            fi
+            pane_scroll_down "$bottom_pane"
             ;;
         # Menu keys
         [1-9])
             select_menu_item "$key"
             ;;
         [Bb])
-            go_back_in_menu
+            menu_handle_back_shortcut
             ;;
         [Qq])
-            quit_application
+            menu_handle_quit_shortcut
             ;;
 
 		w)
