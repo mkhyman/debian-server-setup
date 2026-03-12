@@ -12,65 +12,60 @@
 #     - ENABLED flag
 #     - LEVEL threshold
 #     - FILE destination
-# - Unknown streams are ignored by the logger.
-# - Logging is append-only, single-line text.
+# - LOG_STREAM_NAMES explicitly lists all known streams.
+# - Relative paths are allowed and expected by default.
+# - Absolute paths may also be used.
 #
 # LEVELS
 # ------
-# Supported levels, from least severe to most severe:
+# Supported levels (least to most severe):
 #   info
 #   notice
 #   warn
 #   error
 #
-# Threshold behavior:
-# - A stream logs messages at its configured level or higher severity.
-#
-# Example:
-#   LOG_STREAM_menu_LEVEL="notice"
-# means:
-#   notice, warn, error are written
-#   info is ignored
+# Threshold rule:
+# A stream logs messages at its configured level or higher severity.
 ###############################################################################
 
-# Global master switch:
+# Global master switch
 #   1 = logging enabled
 #   0 = logging disabled
 LOG_ENABLED=1
 
 ###############################################################################
-# STREAM CONFIGURATION
+# STREAM REGISTRY
 #
-# Convention:
-#   LOG_STREAM_<name>_ENABLED=0|1
-#   LOG_STREAM_<name>_LEVEL="info|notice|warn|error"
-#   LOG_STREAM_<name>_FILE="/path/to/file"
-#
-# Suggested policy:
-# - audit stays enabled in normal operation
-# - noisy/debug-style streams default to disabled
+# All configured streams must be listed here.
 ###############################################################################
 
-# Audit log:
-# Important operational record of actions taken by the application.
+LOG_STREAM_NAMES=(
+    audit
+    menu
+    workflow
+    input
+)
+
+###############################################################################
+# DEFAULT STREAMS
+#
+# Policy:
+# - audit stays enabled in normal operation
+# - debugging streams default to disabled
+###############################################################################
+
 LOG_STREAM_audit_ENABLED=1
 LOG_STREAM_audit_LEVEL="info"
-LOG_STREAM_audit_FILE="./logs/audit.log"
+LOG_STREAM_audit_FILE="logs/audit.log"
 
-# Menu log:
-# Useful for debugging menu navigation and lifecycle handlers.
 LOG_STREAM_menu_ENABLED=0
 LOG_STREAM_menu_LEVEL="notice"
-LOG_STREAM_menu_FILE="./logs/menu.log"
+LOG_STREAM_menu_FILE="logs/menu.log"
 
-# Workflow log:
-# Useful for debugging workflow execution and step transitions.
 LOG_STREAM_workflow_ENABLED=0
 LOG_STREAM_workflow_LEVEL="notice"
-LOG_STREAM_workflow_FILE="./logs/workflow.log"
+LOG_STREAM_workflow_FILE="logs/workflow.log"
 
-# Input log:
-# Usually noisy, so off by default.
 LOG_STREAM_input_ENABLED=0
 LOG_STREAM_input_LEVEL="warn"
-LOG_STREAM_input_FILE="./logs/input.log"
+LOG_STREAM_input_FILE="logs/input.log"

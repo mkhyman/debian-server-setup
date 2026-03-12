@@ -1,28 +1,71 @@
 #!/usr/bin/env bash
 
-source config/log_config.sh
-source lib/log.sh
+###############################################################################
+# main.sh
+#
+# Main entrypoint for the Bash TUI application.
+#
+# RESPONSIBILITIES
+# ----------------
+# - source configuration and libraries
+# - source menu and workflow definitions
+# - start core runtime
+# - initialize panes and menu system
+# - run the main input loop
+###############################################################################
 
-source lib/core.sh
-source lib/tui_panes.sh
-source lib/tui_input.sh
-source lib/tui_menu.sh
-source lib/workflow.sh
-source test_workflow.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-source menu/main_menu.sh
-source menu/user_menu.sh
-source menu/application_menu.sh
+###############################################################################
+# CONFIGURATION
+###############################################################################
 
-core_install_traps
-core_init || exit 1
+source "$SCRIPT_DIR/config/log_config.sh"
+
+###############################################################################
+# LIBRARIES
+###############################################################################
+
+source "$SCRIPT_DIR/lib/log.sh"
+source "$SCRIPT_DIR/lib/core.sh"
+source "$SCRIPT_DIR/lib/tui_panes.sh"
+source "$SCRIPT_DIR/lib/tui_input.sh"
+source "$SCRIPT_DIR/lib/tui_menu.sh"
+source "$SCRIPT_DIR/lib/workflow.sh"
+
+###############################################################################
+# WORKFLOWS
+###############################################################################
+
+# Source workflow definitions here.
+# Example:
+# source workflows/user_delete.sh
+# source workflows/application_manage.sh
+
+###############################################################################
+# MENUS
+###############################################################################
+
+source "$SCRIPT_DIR/menu/main_menu.sh"
+source "$SCRIPT_DIR/menu/user_menu.sh"
+source "$SCRIPT_DIR/menu/application_menu.sh"
+
+###############################################################################
+# STARTUP
+###############################################################################
+
+core_startup || exit 1
 
 setup_panes
 pane_draw_all
 menu_init "MAIN"
 
+###############################################################################
+# MAIN LOOP
+###############################################################################
+
 while true; do
-    key=$(read_key) || break
+    key="$(read_key)" || break
 
     case "$INPUT_MODE" in
         normal)
@@ -36,3 +79,5 @@ while true; do
             ;;
     esac
 done
+
+exit 0
