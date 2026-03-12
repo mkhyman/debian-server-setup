@@ -92,6 +92,7 @@ pane_clear() {
     PANE_SCROLL[$id]=0
     PANE_CURSOR[$id]=-1
 
+    local i
     for ((i=0;i<height;i++)); do
         pane_fill_line "$id" "$i"
     done
@@ -109,6 +110,7 @@ pane_draw() {
 
     local total=${#lines[@]}
 
+    local i
     for ((i=0;i<height;i++)); do
 
         local index=$((scroll+i))
@@ -152,6 +154,7 @@ pane_append() {
 
     local scroll=${PANE_SCROLL[$id]}
 
+    local i
     for ((i=scroll;i<total;i++)); do
         local row=$((i-scroll))
         (( row >= 0 && row < height )) && pane_print_line "$id" "$row" "${lines[i]}"

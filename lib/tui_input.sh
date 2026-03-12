@@ -156,6 +156,7 @@ start_choice() {
 
 read_key() {
     local key
+    local rest
 
     # read one character silently
     read -s -n 1 key
