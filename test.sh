@@ -64,6 +64,7 @@ menu_init "MAIN"
 # MAIN LOOP
 ###############################################################################
 
+log_notice core "Main loop starting"
 while true; do
     key="$(read_key)" || break
 
@@ -79,5 +80,6 @@ while true; do
             ;;
     esac
 done
+log_notice core "Main loop terminated"
 
 exit 0

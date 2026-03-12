@@ -238,6 +238,8 @@ log_write() {
     line="${ts} [${level_upper}] ${message}"
 
     log_append_line "$file" "$line"
+
+    log_debug_pane_mirror "$line"
 }
 
 ###############################################################################
@@ -258,4 +260,15 @@ log_notice() {
 
 log_info() {
     log_write "$1" info "$2"
+}
+
+log_debug_pane_mirror() {
+
+    local line="$1"
+
+    [[ "${LOG_DEBUG_PANE_ENABLED:-0}" == "1" ]] || return 0
+
+    if declare -F pane_append >/dev/null 2>&1; then
+        pane_append "$LOG_DEBUG_PANE_ID" "$line"
+    fi
 }

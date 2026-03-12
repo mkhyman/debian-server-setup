@@ -25,6 +25,8 @@ core_cleanup() {
         return 0
     fi
 
+    log_notice core "Cleaning up terminal state"
+
     stty sane 2>/dev/null || true
     tput cnorm 2>/dev/null || true
     tput rmcup 2>/dev/null || true
@@ -61,10 +63,12 @@ core_install_traps() {
 
 core_exit() {
     local status="${1:-0}"
+    log_notice core "Application exiting (status=${status})"
     exit "$status"
 }
 
 quit_application() {
+    log_notice core "Quit requested"
     core_exit 0
 }
 
@@ -83,6 +87,8 @@ core_startup() {
             'Unable to start: logging could not be initialized. Check config/log_config.sh.'
         return 1
     fi
+
+    log_notice core "Application startup complete"
 
     return 0
 }
