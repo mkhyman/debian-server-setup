@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
+source config/log_config.sh
+source lib/log.sh
+
+source lib/core.sh
 source lib/tui_panes.sh
-source lib/tui_input.sh  # contains read_key
+source lib/tui_input.sh
 source lib/tui_menu.sh
 source lib/workflow.sh
 source test_workflow.sh
@@ -10,66 +14,25 @@ source menu/main_menu.sh
 source menu/user_menu.sh
 source menu/application_menu.sh
 
-# -----------------------------
-# CLEANUP FUNCTION
-# -----------------------------
-cleanup() {
-    # Reset terminal modes first
-    stty sane           # restores echo, canonical mode, ^C, ^D
-    tput cnorm          # show cursor
+core_install_traps
+core_init || exit 1
 
-    # Restore alternate screen if tput smcup was used
-    tput rmcup || true
-
-    # Clear any leftover colored lines
-    clear
-}
-trap cleanup EXIT INT TERM HUP
-
-# -----------------------------
-# TERMINAL INIT
-# -----------------------------
-tput smcup      # enter alternate screen
-tput civis      # hide cursor
-stty -echo      # disable echo
-tput clear
-
-# -----------------------------
-# PANE SETUP
-# -----------------------------
 setup_panes
 pane_draw_all
-
 menu_init "MAIN"
 
-quit_application() {
-    exit 0
-}
-
-# Counter for dynamic log lines
-count=1
-
-# -----------------------------
-# MAIN LOOP
-# -----------------------------
 while true; do
-
     key=$(read_key) || break
 
     case "$INPUT_MODE" in
-
         normal)
             handle_normal_key "$key"
             ;;
-
         prompt)
             handle_prompt_key "$key"
             ;;
-
         choice)
             handle_choice_key "$key"
             ;;
-
     esac
-
 done
