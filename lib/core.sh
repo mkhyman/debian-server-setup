@@ -77,6 +77,8 @@ quit_application() {
 ###############################################################################
 
 core_startup() {
+    core_require_root || return 1
+
     core_install_traps
 
     core_init_terminal || return 1
@@ -89,6 +91,15 @@ core_startup() {
     fi
 
     log_notice core "Application startup complete"
+
+    return 0
+}
+
+core_require_root() {
+    if [[ "$(id -u)" -ne 0 ]]; then
+        printf '%s\n' "This application must be run as root." >&2
+        return 1
+    fi
 
     return 0
 }
