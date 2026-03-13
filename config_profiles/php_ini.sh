@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+PROFILE_PHP_INI__COMMENT_PREFIX=";"
+PROFILE_PHP_INI__KV_STYLE="equals"
+PROFILE_PHP_INI__WRITE_STYLE="spaced_equals"

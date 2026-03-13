@@ -42,7 +42,7 @@ test_workflow_set_colour() {
 }
 
 test_workflow_display_selected_username() {
-    pane_append 3 "you selected ${TEST_WORKFLOW_USERNAME}"
+    pane_append "$PANE_ACTION_ID" "you selected ${TEST_WORKFLOW_USERNAME}"
 }
 
 test_workflow_check_user_exists() {
@@ -64,12 +64,12 @@ test_workflow_confirm_delete() {
 }
 
 test_workflow_display_deleted() {
-    pane_append 3 "user deleted"
+    pane_append "$PANE_ACTION_ID" "user deleted"
 }
 
 test_workflow_display_summary() {
-    pane_append 3 "username: ${TEST_WORKFLOW_USERNAME}"
-    pane_append 3 "colour: ${TEST_WORKFLOW_COLOUR}"
+    pane_append "$PANE_ACTION_ID" "username: ${TEST_WORKFLOW_USERNAME}"
+    pane_append "$PANE_ACTION_ID" "colour: ${TEST_WORKFLOW_COLOUR}"
 }
 
 #################################

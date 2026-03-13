@@ -48,6 +48,6 @@ LOG_STREAM_input_FILE="logs/input.log"
 
 # Debug stream (disabled by default)
 # Can be enabled temporarily during development
-LOG_STREAM_debug_ENABLED=0
+LOG_STREAM_debug_ENABLED=1
 LOG_STREAM_debug_LEVEL="info"
 LOG_STREAM_debug_FILE="logs/debug.log"

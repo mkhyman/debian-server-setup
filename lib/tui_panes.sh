@@ -34,13 +34,13 @@ register_pane() {
 setup_panes() {
     local rows=$(tput lines)
 
-    register_pane 0 0 5 "\033[44m"
-    register_pane 1 5 10 "\033[46m"
-    register_pane 2 15 10 "\033[42m"
+    register_pane "$PANE_SYS_ID" 0 5 "\033[44m"
+    register_pane "$PANE_MENU_ID" 5 10 "\033[46m"
+    register_pane "$PANE_INFO_ID" 15 10 "\033[42m"
 
     local action_start=25
     local action_height=$((rows-action_start-1))
-    register_pane 3 $action_start $action_height "\033[45m"
+    register_pane "$PANE_ACTION_ID" $action_start $action_height "\033[45m"
 }
 
 #################################
@@ -159,6 +159,24 @@ pane_append() {
         local row=$((i-scroll))
         (( row >= 0 && row < height )) && pane_print_line "$id" "$row" "${lines[i]}"
     done
+}
+
+pane_set_content() {
+    local id=$1
+    local text="$2"
+    local height=${PANE_HEIGHT[$id]}
+
+    PANE_BUFFER[$id]=""
+    PANE_SCROLL[$id]=0
+    PANE_CURSOR[$id]=-1
+
+    if [[ -n "$text" ]]; then
+        while IFS= read -r line; do
+            PANE_BUFFER[$id]+="$line"$'\n'
+        done <<< "$text"
+    fi
+
+    pane_draw "$id"
 }
 
 pane_replace_line() {

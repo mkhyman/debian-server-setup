@@ -1,8 +1,13 @@
+#!/usr/bin/env bash
+
 MENU_MAIN_TITLE="Main Menu"
+
 MENU_MAIN_ITEMS=(
     "literal:Users Management|menu|USER"
     "literal:Application Management|menu|APPLICATION"
 )
+
+MENU_MAIN_ITEMS_BLOB="$(menu_items_to_blob "${MENU_MAIN_ITEMS[@]}")"
 
 #
 # MENU_NETWORK_TITLE="Network"

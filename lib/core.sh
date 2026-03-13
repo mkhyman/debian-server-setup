@@ -15,6 +15,7 @@
 ###############################################################################
 
 CORE_INITIALIZED=0
+CORE_STTY_STATE=""
 
 ###############################################################################
 # CLEANUP
@@ -27,12 +28,18 @@ core_cleanup() {
 
     log_notice core "Cleaning up terminal state"
 
-    stty sane 2>/dev/null || true
+    if [[ -n "${CORE_STTY_STATE:-}" ]]; then
+        stty "$CORE_STTY_STATE" 2>/dev/null || stty sane 2>/dev/null || true
+    else
+        stty sane 2>/dev/null || true
+    fi
+
     tput cnorm 2>/dev/null || true
     tput rmcup 2>/dev/null || true
     clear 2>/dev/null || true
 
     CORE_INITIALIZED=0
+    CORE_STTY_STATE=""
 }
 
 ###############################################################################
@@ -40,10 +47,16 @@ core_cleanup() {
 ###############################################################################
 
 core_init_terminal() {
+    core_log_tty_state "before_init"
+
+    CORE_STTY_STATE="$(stty -g)" || return 1
+
     tput smcup || return 1
     tput civis || return 1
-    stty -echo || return 1
+    stty -icanon -echo min 1 time 0 || return 1
     tput clear || return 1
+
+    core_log_tty_state "after_init"
 
     CORE_INITIALIZED=1
     return 0
@@ -54,7 +67,8 @@ core_init_terminal() {
 ###############################################################################
 
 core_install_traps() {
-    trap core_cleanup EXIT INT TERM HUP
+    trap 'core_cleanup' EXIT
+    trap 'core_cleanup; exit 130' INT TERM HUP
 }
 
 ###############################################################################
@@ -102,4 +116,15 @@ core_require_root() {
     fi
 
     return 0
+}
+
+###############################################################################
+# HELPERS
+###############################################################################
+
+core_log_tty_state() {
+    local label="$1"
+    local tty_state
+
+    tty_state="$(stty -a 2>/dev/null)" || tty_state="<stty failed>"
 }

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+PANE_SYS_ID=0
+PANE_MENU_ID=1
+PANE_INFO_ID=2
+PANE_ACTION_ID=3

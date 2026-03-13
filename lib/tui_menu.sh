@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
 
-MENU_PANE_ID=1
 MENU_STACK=()
 MENU_STRICT_HANDLERS=1
+
+menu_items_to_blob() {
+    local item
+    local blob=""
+
+    for item in "$@"; do
+        [ -n "$item" ] || continue
+
+        if [ -n "$blob" ]; then
+            blob+=$'\n'
+        fi
+
+        blob+="$item"
+    done
+
+    printf '%s' "$blob"
+}
 
 menu_stack_size() {
     printf '%s' "${#MENU_STACK[@]}"
@@ -21,26 +37,46 @@ menu_is_top_level() {
 menu_exists() {
     local menu_name="$1"
     local title_var="MENU_${menu_name}_TITLE"
-    [[ -n "${!title_var}" ]]
+    [[ -n "${!title_var:-}" ]]
 }
 
 menu_get_title() {
     local menu_name="$1"
     local title_var="MENU_${menu_name}_TITLE"
-    printf '%s' "${!title_var}"
+    printf '%s' "${!title_var:-}"
 }
 
-menu_get_items() {
+menu_get_items_blob() {
     local menu_name="$1"
-    local var_name="MENU_${menu_name}_ITEMS[@]"
-    printf '%s\n' "${!var_name}"
+    local var_name="MENU_${menu_name}_ITEMS_BLOB"
+    printf '%s' "${!var_name:-}"
 }
+
+# menu_get_items() {
+#     local menu_name="$1"
+#     local var_name="MENU_${menu_name}_ITEMS_BLOB"
+#     printf '%s' "${!var_name:-}"
+# }
 
 menu_get_item_count() {
     local menu_name="$1"
-    local var_name="MENU_${menu_name}_ITEMS[@]"
-    local items=( "${!var_name}" )
-    printf '%s' "${#items[@]}"
+    local blob
+    local count=0
+    local line
+
+    blob="$(menu_get_items_blob "$menu_name")"
+
+    [ -n "$blob" ] || {
+        printf '%s' 0
+        return 0
+    }
+
+    while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        count=$((count + 1))
+    done <<< "$blob"
+
+    printf '%s' "$count"
 }
 
 menu_real_item_limit() {
@@ -49,26 +85,31 @@ menu_real_item_limit() {
 
 menu_get_visible_real_count() {
     local menu_name="$1"
-    local count
-    local limit
-
-    count="$(menu_get_item_count "$menu_name")"
-    limit="$(menu_real_item_limit)"
-
-    if (( count > limit )); then
-        count="$limit"
-    fi
-
-    printf '%s' "$count"
+    menu_get_item_count "$menu_name"
 }
 
 menu_get_item_entry() {
     local menu_name="$1"
-    local index="$2"
-    local var_name="MENU_${menu_name}_ITEMS[@]"
-    local items=( "${!var_name}" )
+    local target_index="$2"
+    local blob
+    local index=0
+    local line
 
-    printf '%s' "${items[index]}"
+    blob="$(menu_get_items_blob "$menu_name")"
+    [ -n "$blob" ] || return 1
+
+    while IFS= read -r line; do
+        [ -n "$line" ] || continue
+
+        if [ "$index" -eq "$target_index" ]; then
+            printf '%s' "$line"
+            return 0
+        fi
+
+        index=$((index + 1))
+    done <<< "$blob"
+
+    return 1
 }
 
 menu_auto_item_label() {
@@ -108,7 +149,6 @@ menu_resolve_label() {
 }
 
 menu_render() {
-
     local menu_name="$1"
     local title
     local visible_count
@@ -119,6 +159,7 @@ menu_render() {
     local target
     local label
     local auto_label
+    local menu_text
 
     if ! menu_exists "$menu_name"; then
         log_error menu "Attempt to render undefined menu ${menu_name}"
@@ -128,38 +169,31 @@ menu_render() {
     title="$(menu_get_title "$menu_name")"
     visible_count="$(menu_get_visible_real_count "$menu_name")"
 
-    pane_clear "$MENU_PANE_ID"
-
-    pane_append "$MENU_PANE_ID" "$title"
-    pane_append "$MENU_PANE_ID" "--------------------"
+    menu_text="$title"$'\n'
+    menu_text+="--------------------"$'\n'
 
     for ((i=0; i<visible_count; i++)); do
-
         entry="$(menu_get_item_entry "$menu_name" "$i")"
-
         IFS='|' read -r label_spec action target <<< "$entry"
-
         label="$(menu_resolve_label "$label_spec")"
-
-        pane_append "$MENU_PANE_ID" "$((i+1)). $label"
-
+        menu_text+="$((i+1)). $label"$'\n'
     done
 
     auto_label="$(menu_auto_item_label)"
 
     if menu_is_top_level; then
-        pane_append "$MENU_PANE_ID" "Q. $auto_label"
+        menu_text+="Q. $auto_label"$'\n'
     else
-        pane_append "$MENU_PANE_ID" "B. $auto_label"
+        menu_text+="B. $auto_label"$'\n'
     fi
 
-    log_info menu "Rendered menu ${menu_name}"
+    pane_set_content "$PANE_MENU_ID" "$menu_text"
 
+    log_info menu "Rendered menu ${menu_name}"
     return 0
 }
 
 menu_init() {
-
     local initial_menu="$1"
 
     if ! menu_exists "$initial_menu"; then
@@ -171,11 +205,11 @@ menu_init() {
 
     log_notice menu "Initializing menu ${initial_menu}"
 
+    menu_run_on_enter "$initial_menu"
     menu_render "$initial_menu"
 }
 
 menu_open() {
-
     local target_menu="$1"
 
     if ! menu_exists "$target_menu"; then
@@ -187,20 +221,21 @@ menu_open() {
 
     log_info menu "Opening menu ${target_menu}"
 
+    menu_run_on_enter "$target_menu"
     menu_render "$target_menu"
 }
 
 menu_go_back() {
-
     local count
     local leaving_menu
     local new_menu
 
     count=${#MENU_STACK[@]}
-
     (( count > 1 )) || return 1
 
     leaving_menu="${MENU_STACK[count-1]}"
+
+    menu_run_on_back "$leaving_menu"
 
     unset 'MENU_STACK[count-1]'
     MENU_STACK=( "${MENU_STACK[@]}" )
@@ -209,6 +244,7 @@ menu_go_back() {
 
     log_info menu "Returning from menu ${leaving_menu} to ${new_menu}"
 
+    menu_run_on_enter "$new_menu"
     menu_render "$new_menu"
 }
 
@@ -285,4 +321,36 @@ menu_handle_quit_shortcut() {
         log_notice menu "Quit shortcut used"
         quit_application
     fi
+}
+
+menu_run_on_enter() {
+    local menu_name="$1"
+    local hook_var="MENU_${menu_name}_ON_ENTER"
+    local hook_func="${!hook_var:-}"
+
+    [ -n "$hook_func" ] || return 0
+
+    if ! declare -F "$hook_func" >/dev/null 2>&1; then
+        log_warn menu "Missing on-enter hook function ${hook_func} for menu ${menu_name}"
+        return 1
+    fi
+
+    log_info menu "Running on-enter hook ${hook_func} for menu ${menu_name}"
+    "$hook_func" "$menu_name"
+}
+
+menu_run_on_back() {
+    local menu_name="$1"
+    local hook_var="MENU_${menu_name}_ON_BACK"
+    local hook_func="${!hook_var:-}"
+
+    [ -n "$hook_func" ] || return 0
+
+    if ! declare -F "$hook_func" >/dev/null 2>&1; then
+        log_warn menu "Missing on-back hook function ${hook_func} for menu ${menu_name}"
+        return 1
+    fi
+
+    log_info menu "Running on-back hook ${hook_func} for menu ${menu_name}"
+    "$hook_func" "$menu_name"
 }

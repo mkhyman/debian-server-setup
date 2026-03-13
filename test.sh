@@ -1,5 +1,25 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Development trace toggle
+# 0 = normal operation
+# 1 = enable bash execution trace to logs/os_tool_trace.log
+DEBUG_TRACE=0
+
+if (( DEBUG_TRACE )); then
+    TRACE_FILE="$SCRIPT_DIR/os_tool_trace.log"
+    : > "$TRACE_FILE" || exit 1
+    exec 5>>"$TRACE_FILE" || exit 1
+    export BASH_XTRACEFD=5
+    export PS4='+ ${BASH_SOURCE}:${LINENO}:${FUNCNAME[0]:-main}: '
+    set -x
+else
+    set +x
+fi
+
+set -u
+
 ###############################################################################
 # main.sh
 #
@@ -14,12 +34,11 @@
 # - run the main input loop
 ###############################################################################
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 ###############################################################################
 # CONFIGURATION
 ###############################################################################
 
+source "$SCRIPT_DIR/config/app_config.sh"
 source "$SCRIPT_DIR/config/log_config.sh"
 
 ###############################################################################
@@ -32,15 +51,20 @@ source "$SCRIPT_DIR/lib/tui_panes.sh"
 source "$SCRIPT_DIR/lib/tui_input.sh"
 source "$SCRIPT_DIR/lib/tui_menu.sh"
 source "$SCRIPT_DIR/lib/workflow.sh"
+source "$SCRIPT_DIR/lib/command.sh"
+source "$SCRIPT_DIR/lib/config.sh"
+source "$SCRIPT_DIR/lib/fs.sh"
+source "$SCRIPT_DIR/lib/package.sh"
+source "$SCRIPT_DIR/lib/service.sh"
+source "$SCRIPT_DIR/lib/system.sh"
 
 ###############################################################################
-# WORKFLOWS
+# MODULES
 ###############################################################################
 
-# Source workflow definitions here.
-# Example:
-# source workflows/user_delete.sh
-# source workflows/application_manage.sh
+source "$SCRIPT_DIR/modules/composer_module.sh"
+source "$SCRIPT_DIR/modules/user_module.sh"
+source "$SCRIPT_DIR/modules/application_module.sh"
 
 ###############################################################################
 # MENUS
@@ -49,6 +73,19 @@ source "$SCRIPT_DIR/lib/workflow.sh"
 source "$SCRIPT_DIR/menu/main_menu.sh"
 source "$SCRIPT_DIR/menu/user_menu.sh"
 source "$SCRIPT_DIR/menu/application_menu.sh"
+source "$SCRIPT_DIR/menu/composer_menu.sh"
+
+###############################################################################
+# INFO PANELS
+###############################################################################
+
+source "$SCRIPT_DIR/info/composer_info.sh"
+
+################################################################################
+# WORKFLOW IMPLEMENTATIONS
+################################################################################
+
+source "$SCRIPT_DIR/workflows/composer_workflow.sh"
 
 ###############################################################################
 # STARTUP

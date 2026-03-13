@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# NOTE FOR FUTURE:
+# This still uses indirect array expansion:
+#   WORKFLOW_${workflow_name}[@]
+# which is fragile in Bash 3, especially with set -u.
+#
+# If workflow definitions grow, migrate them to the same pattern used by menus:
+# - keep readable array definitions in workflow files
+# - convert once at source time to a newline-separated blob
+# - have workflow.sh read the blob instead of indirectly expanding arrays
+#
+# That avoids eval and avoids Bash 3 indirect-array problems.
+
 workflow_run() {
 
     local workflow_name="$1"

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+PROFILE_APACHE__COMMENT_PREFIX="#"
+PROFILE_APACHE__KV_STYLE="space"
+PROFILE_APACHE__WRITE_STYLE="single_space"
