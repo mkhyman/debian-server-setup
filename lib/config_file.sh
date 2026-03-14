@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# config.sh
+# config_file.sh
 #
 # Lightweight configuration helper library for modifying simple system
 # configuration files that follow a key/value model.
