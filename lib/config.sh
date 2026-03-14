@@ -1,7 +1,56 @@
 #!/usr/bin/env bash
-
-# Bash 3 compatible transaction-based config editing.
-# Expects profile definitions sourced from config_profiles/*.sh
+#
+# config.sh
+#
+# Lightweight configuration helper library for modifying simple system
+# configuration files that follow a key/value model.
+#
+# Supported formats:
+#
+#   KEY=value
+#   KEY value
+#
+# The library operates on a line-by-line basis and is intended for files
+# where configuration can be safely modified by locating a key and replacing
+# or appending a single line.
+#
+# Transaction model
+# -----------------
+#
+# All modifications are performed on a temporary working copy of the target
+# configuration file. The original file is never modified directly.
+#
+# The typical workflow is:
+#
+#   1. Begin a configuration transaction
+#   2. Copy the target file to a temporary working file
+#   3. Apply all modifications to the temporary file
+#   4. Commit the transaction by replacing the original file
+#
+# This approach provides:
+#
+#   - atomic updates to configuration files
+#   - a basis for rollback support
+#   - a basis for backup/version support
+#   - protection against partially applied changes
+#
+# Scope
+# -----
+#
+# This library intentionally supports only simple key/value configuration
+# files. Files that require structural or syntax-aware parsing should be
+# handled by dedicated modules instead.
+#
+# Not supported:
+#
+#   - nested or block-based configuration
+#   - multi-line values
+#   - structured formats (YAML, JSON, XML, etc.)
+#   - configuration where ordering or context is semantically significant
+#
+# The goal of this library is to remain small, predictable, and safe for
+# simple configuration edits.
+#
 
 CONFIG_TXN_COUNTER=0
 
@@ -10,7 +59,7 @@ config_profile_get() {
     local field="$2"
     local var_name="${profile}__${field}"
 
-    eval 'printf "%s" "${'"$var_name"'}"'
+    printf '%s' "${!var_name:-}"
 }
 
 _config_txn_set() {
@@ -19,7 +68,7 @@ _config_txn_set() {
     local value="$3"
     local var_name="${txn}__${field}"
 
-    eval "$var_name=\$value"
+    printf -v "$var_name" '%s' "$value"
 }
 
 _config_txn_get() {
@@ -27,10 +76,10 @@ _config_txn_get() {
     local field="$2"
     local var_name="${txn}__${field}"
 
-    eval 'printf "%s" "${'"$var_name"'}"'
+    printf '%s' "${!var_name:-}"
 }
 
-config_begin() {
+config_txn_begin() {
     local file="$1"
     local profile="$2"
     local tmp backup txn
@@ -59,7 +108,7 @@ config_begin() {
     printf "%s\n" "$txn"
 }
 
-config_abort() {
+config_txn_abort() {
     local txn="$1"
     local tmp
 
@@ -67,7 +116,7 @@ config_abort() {
     [ -n "$tmp" ] && [ -e "$tmp" ] && fs_remove "$tmp"
 }
 
-config_commit() {
+config_txn_commit() {
     local txn="$1"
     local file tmp backup dir
 
