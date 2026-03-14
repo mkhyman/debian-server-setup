@@ -13,3 +13,6 @@ CONFIG_FILE_TMP_SUFFIX=".tmp"
 CONFIG_FILE_CREATE_BACKUP=1
 CONFIG_FILE_BACKUP_PREFIX=""
 CONFIG_FILE_BACKUP_SUFFIX=".bak"
+
+# Default php modules installed
+PHP_DEFAULT_MODULES=(cli common fpm curl mbstring xml zip)
