@@ -3,12 +3,41 @@
 MENU_STACK=()
 MENU_STRICT_HANDLERS=1
 
-menu_items_to_blob() {
+menu_register() {
+    local menu_name="$1"
+    shift
+
     local item
-    local blob=""
+    local blob
 
     for item in "$@"; do
-        [ -n "$item" ] || continue
+        menu_validate_item "$item" || {
+            log_error menu "Failed to register menu ${menu_name}"
+            return 1
+        }
+    done
+
+    blob="$(menu_items_to_blob "$@")"
+    printf -v "MENU_${menu_name}_ITEMS_BLOB" '%s' "$blob"
+
+    return 0
+}
+
+menu_items_to_blob() {
+    local blob=""
+    local item
+    local trimmed
+
+    for item in "$@"; do
+        # strip CR (handles CRLF files)
+        item="${item%$'\r'}"
+
+        # trim whitespace for validation
+        trimmed="${item#"${item%%[![:space:]]*}"}"
+        trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+
+        # skip empty / whitespace-only entries
+        [ -n "$trimmed" ] || continue
 
         if [ -n "$blob" ]; then
             blob+=$'\n'
@@ -18,6 +47,68 @@ menu_items_to_blob() {
     done
 
     printf '%s' "$blob"
+}
+
+menu_validate_item() {
+    local item="$1"
+    local field1
+    local field2
+    local field3
+    local extra
+
+    item="${item%$'\r'}"
+    [ -n "$item" ] || {
+        log_error menu "Invalid menu item: empty item"
+        return 1
+    }
+
+    IFS='|' read -r field1 field2 field3 extra <<< "$item"
+
+    [ -n "${extra:-}" ] && {
+        log_error menu "Invalid menu item: too many fields: ${item}"
+        return 1
+    }
+
+    [ -n "${field1:-}" ] || {
+        log_error menu "Invalid menu item: missing label field: ${item}"
+        return 1
+    }
+
+    [ -n "${field2:-}" ] || {
+        log_error menu "Invalid menu item: missing target type: ${item}"
+        return 1
+    }
+
+    [ -n "${field3:-}" ] || {
+        log_error menu "Invalid menu item: missing target value: ${item}"
+        return 1
+    }
+
+    case "$field1" in
+        literal:*|func:*)
+            ;;
+        *)
+            log_error menu "Invalid menu item: first field must start with literal: or func:: ${item}"
+            return 1
+            ;;
+    esac
+
+    case "$field2" in
+        menu|workflow)
+            ;;
+        *)
+            log_error menu "Invalid menu item: unknown target type '${field2}': ${item}"
+            return 1
+            ;;
+    esac
+
+    return 0
+}
+
+menu_get_items_blob() {
+    local menu_name="$1"
+    local var_name="MENU_${menu_name}_ITEMS_BLOB"
+    printf '%s' "${!var_name:-}"
 }
 
 menu_stack_size() {
@@ -44,12 +135,6 @@ menu_get_title() {
     local menu_name="$1"
     local title_var="MENU_${menu_name}_TITLE"
     printf '%s' "${!title_var:-}"
-}
-
-menu_get_items_blob() {
-    local menu_name="$1"
-    local var_name="MENU_${menu_name}_ITEMS_BLOB"
-    printf '%s' "${!var_name:-}"
 }
 
 # menu_get_items() {

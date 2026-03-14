@@ -6,4 +6,4 @@ MENU_APPLICATION_ITEMS=(
     "literal:Composer Management|menu|COMPOSER"
 )
 
-MENU_APPLICATION_ITEMS_BLOB="$(menu_items_to_blob "${MENU_APPLICATION_ITEMS[@]}")"
+menu_register "APPLICATION" "${MENU_APPLICATION_ITEMS[@]}"

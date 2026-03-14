@@ -6,7 +6,7 @@ MENU_COMPOSER_ITEMS=(
     "func:menu_label_composer_install_uninstall|workflow|WF_COMPOSER_INSTALL_UNINSTALL"
 )
 
-MENU_COMPOSER_ITEMS_BLOB="$(menu_items_to_blob "${MENU_COMPOSER_ITEMS[@]}")"
+menu_register "COMPOSER" "${MENU_COMPOSER_ITEMS[@]}"
 
 MENU_COMPOSER_ON_ENTER="menu_composer_on_enter"
 MENU_COMPOSER_ON_BACK="menu_composer_on_back"

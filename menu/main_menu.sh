@@ -7,7 +7,7 @@ MENU_MAIN_ITEMS=(
     "literal:Application Management|menu|APPLICATION"
 )
 
-MENU_MAIN_ITEMS_BLOB="$(menu_items_to_blob "${MENU_MAIN_ITEMS[@]}")"
+menu_register "MAIN" "${MENU_MAIN_ITEMS[@]}"
 
 #
 # MENU_NETWORK_TITLE="Network"

@@ -92,6 +92,7 @@ quit_application() {
 
 core_startup() {
     core_require_root || return 1
+    core_require_tty || return 1
 
     core_install_traps
 
@@ -127,4 +128,14 @@ core_log_tty_state() {
     local tty_state
 
     tty_state="$(stty -a 2>/dev/null)" || tty_state="<stty failed>"
+}
+
+core_require_tty() {
+    if [ ! -t 0 ] || [ ! -t 1 ]; then
+        printf '%s
+' 'This application requires an interactive terminal.' >&2
+        return 1
+    fi
+
+    return 0
 }

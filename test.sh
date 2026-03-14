@@ -21,15 +21,13 @@ fi
 set -u
 
 ###############################################################################
-# main.sh
+# APP BOOTSTRAP
 #
-# Main entrypoint for the Bash TUI application.
-#
-# RESPONSIBILITIES
-# ----------------
-# - source configuration and libraries
+# This file is responsible for assembling the application:
+# - source configuration
+# - source libraries
+# - source modules
 # - source menu and workflow definitions
-# - start core runtime
 # - initialize panes and menu system
 # - run the main input loop
 ###############################################################################
@@ -54,17 +52,26 @@ source "$SCRIPT_DIR/lib/workflow.sh"
 source "$SCRIPT_DIR/lib/command.sh"
 source "$SCRIPT_DIR/lib/config.sh"
 source "$SCRIPT_DIR/lib/fs.sh"
+source "$SCRIPT_DIR/lib/platform.sh"
 source "$SCRIPT_DIR/lib/package.sh"
 source "$SCRIPT_DIR/lib/service.sh"
 source "$SCRIPT_DIR/lib/system.sh"
+
+###############################################################################
+# CONFIG PROFILES
+###############################################################################
+
+source "$SCRIPT_DIR/config_profiles/apache.sh"
+source "$SCRIPT_DIR/config_profiles/php_ini.sh"
+source "$SCRIPT_DIR/config_profiles/sshd.sh"
 
 ###############################################################################
 # MODULES
 ###############################################################################
 
 source "$SCRIPT_DIR/modules/composer_module.sh"
+source "$SCRIPT_DIR/modules/php_module.sh"
 source "$SCRIPT_DIR/modules/user_module.sh"
-source "$SCRIPT_DIR/modules/application_module.sh"
 
 ###############################################################################
 # MENUS
