@@ -17,6 +17,7 @@ LOG_STREAM_NAMES=(
     menu
     workflow
     input
+    log_config
     debug
 )
 
