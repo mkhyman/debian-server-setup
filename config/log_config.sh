@@ -46,6 +46,11 @@ LOG_STREAM_input_ENABLED=0
 LOG_STREAM_input_LEVEL="warn"
 LOG_STREAM_input_FILE="logs/input.log"
 
+# Config file manipulation
+LOG_STREAM_config_file_ENABLED=0
+LOG_STREAM_config_file_LEVEL="warn"
+LOG_STREAM_config_file_FILE="logs/config_file.log"
+
 # Debug stream (disabled by default)
 # Can be enabled temporarily during development
 LOG_STREAM_debug_ENABLED=1
