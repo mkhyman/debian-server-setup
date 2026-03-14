@@ -1,0 +1,21 @@
+# Logs
+logs/
+*.log
+
+# Runtime trace file
+os_tool_trace.log
+
+# Temporary transaction files (config editing)
+*.tmp
+
+# Backup files created by config_file.sh
+*.bak
+
+# Editor files
+*~
+*.swp
+*.swo
+
+# OS noise
+.DS_Store
+Thumbs.db
