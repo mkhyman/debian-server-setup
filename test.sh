@@ -20,6 +20,11 @@ fi
 
 set -u
 
+# just for debug during development, not intended for production use
+mkdir -p logs
+printf '\n[%s] --- startup ---\n' "$(date '+%Y-%m-%d %H:%M:%S')" >> logs/runtime-errors.log
+exec 2>>runtime-errors.log
+
 ###############################################################################
 # APP BOOTSTRAP
 #
@@ -56,6 +61,7 @@ source "$SCRIPT_DIR/lib/platform.sh"
 source "$SCRIPT_DIR/lib/package.sh"
 source "$SCRIPT_DIR/lib/service.sh"
 source "$SCRIPT_DIR/lib/system.sh"
+source "$SCRIPT_DIR/lib/formatting.sh"
 
 ###############################################################################
 # CONFIG PROFILES
@@ -81,18 +87,21 @@ source "$SCRIPT_DIR/menu/main_menu.sh"
 source "$SCRIPT_DIR/menu/user_menu.sh"
 source "$SCRIPT_DIR/menu/application_menu.sh"
 source "$SCRIPT_DIR/menu/composer_menu.sh"
+source "$SCRIPT_DIR/menu/php_menu.sh"
 
 ###############################################################################
 # INFO PANELS
 ###############################################################################
 
 source "$SCRIPT_DIR/info/composer_info.sh"
+source "$SCRIPT_DIR/info/php_info.sh"
 
 ################################################################################
 # WORKFLOW IMPLEMENTATIONS
 ################################################################################
 
 source "$SCRIPT_DIR/workflows/composer_workflow.sh"
+source "$SCRIPT_DIR/workflows/php_workflow.sh"
 
 ###############################################################################
 # STARTUP
