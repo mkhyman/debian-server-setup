@@ -22,7 +22,6 @@ set -u
 
 # just for debug during development, not intended for production use
 mkdir -p logs
-printf '\n[%s] --- startup ---\n' "$(date '+%Y-%m-%d %H:%M:%S')" >> logs/runtime-errors.log
 exec 2>>runtime-errors.log
 
 ###############################################################################
