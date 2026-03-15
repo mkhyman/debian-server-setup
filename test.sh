@@ -118,7 +118,6 @@ menu_init "MAIN"
 
 log_notice core "Main loop starting"
 while true; do
-echo "Waiting for key input..." >&2
     key="$(tui_read_key)" || break
     tui_handle_key "$key"
 done

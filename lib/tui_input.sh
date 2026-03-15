@@ -44,16 +44,12 @@ tui_read_key() {
     local rest=""
     local tty_state
 
-    tty_state="$(stty -a 2>/dev/null)" || tty_state="<stty failed>"
-
     IFS= read -rsn1 key || return 1
 
     if [[ "$key" == $'\x1b' ]]; then
         read -rsn2 rest || true
         key+="$rest"
     fi
-
-    tty_state="$(stty -a 2>/dev/null)" || tty_state="<stty failed>"
 
     printf '%s' "$key"
 }
