@@ -118,19 +118,9 @@ menu_init "MAIN"
 
 log_notice core "Main loop starting"
 while true; do
-    key="$(read_key)" || break
-
-    case "$INPUT_MODE" in
-        normal)
-            handle_normal_key "$key"
-            ;;
-        prompt)
-            handle_prompt_key "$key"
-            ;;
-        choice)
-            handle_choice_key "$key"
-            ;;
-    esac
+echo "Waiting for key input..." >&2
+    key="$(tui_read_key)" || break
+    tui_handle_key "$key"
 done
 log_notice core "Main loop terminated"
 

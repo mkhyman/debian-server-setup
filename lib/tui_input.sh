@@ -1,23 +1,45 @@
 #!/usr/bin/env bash
+TUI_INPUT_MODE="normal"
 
-INPUT_MODE="normal"
+TUI_PROMPT_BUFFER=""
+TUI_PROMPT_TEXT=""
+TUI_PROMPT_HANDLER=""
+TUI_PROMPT_PANE_ID=""
+TUI_PROMPT_BUFFER_INDEX=""
 
-# read_key() {
+TUI_CHOICE_TEXT=""
+TUI_CHOICE_ALLOWED=""
+TUI_CHOICE_HANDLER=""
+TUI_CHOICE_PANE_ID=""
+TUI_CHOICE_BUFFER_INDEX=""
 
-#     local key
-#     local rest=""
+test_prompt_handler() {
+    local value="$1"
+    pane_append "$PANE_ACTION_ID" "PROMPT_HANDLER:${value}"
+}
 
-#     IFS= read -rsn1 key || return 1
+test_choice_handler() {
+    local value="$1"
+    pane_append "$PANE_ACTION_ID" "CHOICE_HANDLER:${value}"
+}
 
-#     if [[ "$key" == $'\x1b' ]]; then
-#         read -rsn2 rest || true
-#         key+="$rest"
-#     fi
+tui_handle_key() {
+    local key="$1"
 
-#     printf '%s' "$key"
-# }
+    case "$TUI_INPUT_MODE" in
+        prompt)
+            tui_handle_prompt_key "$key"
+            ;;
+        choice)
+            tui_handle_choice_key "$key"
+            ;;
+        *)
+            tui_handle_normal_key "$key"
+            ;;
+    esac
+}
 
-read_key() {
+tui_read_key() {
     local key
     local rest=""
     local tty_state
@@ -36,7 +58,7 @@ read_key() {
     printf '%s' "$key"
 }
 
-handle_normal_key() {
+tui_handle_normal_key() {
 
     local key="$1"
 
@@ -57,36 +79,136 @@ handle_normal_key() {
     esac
 }
 
-enter_prompt_mode() {
+tui_handle_prompt_key() {
+    local key="$1"
+    local handler=""
+    local value=""
+    local committed_text=""
 
-    INPUT_MODE="prompt"
+    case "$key" in
+        $'\r'|$'\n'|"")
+            handler="$TUI_PROMPT_HANDLER"
+            value="$TUI_PROMPT_BUFFER"
+            committed_text="${TUI_PROMPT_TEXT}${value}"
+
+            tui_commit_line_at_index \
+                "$TUI_PROMPT_PANE_ID" \
+                "$TUI_PROMPT_BUFFER_INDEX" \
+                "$committed_text"
+
+            TUI_PROMPT_BUFFER=""
+            TUI_PROMPT_TEXT=""
+            TUI_PROMPT_HANDLER=""
+            TUI_PROMPT_PANE_ID=""
+            TUI_PROMPT_BUFFER_INDEX=""
+            TUI_INPUT_MODE="normal"
+
+            if [[ -n "$handler" ]]; then
+                "$handler" "$value"
+            fi
+            return
+            ;;
+
+        $'\177'|$'\010')
+            TUI_PROMPT_BUFFER="${TUI_PROMPT_BUFFER%?}"
+            ;;
+
+        *)
+            TUI_PROMPT_BUFFER+="$key"
+            ;;
+    esac
+
+    committed_text="${TUI_PROMPT_TEXT}${TUI_PROMPT_BUFFER}"
+
+    tui_commit_line_at_index \
+        "$TUI_PROMPT_PANE_ID" \
+        "$TUI_PROMPT_BUFFER_INDEX" \
+        "$committed_text"
+}
+
+tui_handle_choice_key() {
+    local key="$1"
+    local handler=""
+    local value=""
+    local committed_text=""
+
+    case "$key" in
+        [A-Z])
+            key="$(printf '%s' "$key" | tr 'A-Z' 'a-z')"
+            ;;
+    esac
+
+    if [[ "$TUI_CHOICE_ALLOWED" != *"$key"* ]]; then
+        return
+    fi
+
+    handler="$TUI_CHOICE_HANDLER"
+    value="$key"
+    committed_text="${TUI_CHOICE_TEXT}${value}"
+
+    tui_commit_line_at_index \
+        "$TUI_CHOICE_PANE_ID" \
+        "$TUI_CHOICE_BUFFER_INDEX" \
+        "$committed_text"
+
+    TUI_CHOICE_TEXT=""
+    TUI_CHOICE_ALLOWED=""
+    TUI_CHOICE_HANDLER=""
+    TUI_CHOICE_PANE_ID=""
+    TUI_CHOICE_BUFFER_INDEX=""
+    TUI_INPUT_MODE="normal"
+
+    if [[ -n "$handler" ]]; then
+        "$handler" "$value"
+    fi
+}
+
+tui_prompt_start() {
+    local pane_id="$1"
+    local prompt_text="$2"
+    local prompt_handler="$3"
+
+    TUI_INPUT_MODE="prompt"
+    TUI_PROMPT_BUFFER=""
+    TUI_PROMPT_TEXT="$prompt_text"
+    TUI_PROMPT_HANDLER="$prompt_handler"
+    TUI_PROMPT_PANE_ID="$pane_id"
+
+    pane_append "$pane_id" "$prompt_text"
+    TUI_PROMPT_BUFFER_INDEX="$(tui_get_buffer_index_for_cursor "$pane_id")"
 
     log_info input "Entering prompt mode"
 }
 
-enter_choice_mode() {
+tui_choice_start() {
+    local pane_id="$1"
+    local choice_text="$2"
+    local choice_allowed="$3"
+    local choice_handler="$4"
 
-    INPUT_MODE="choice"
+    TUI_INPUT_MODE="choice"
+    TUI_CHOICE_TEXT="$choice_text"
+    TUI_CHOICE_ALLOWED="$choice_allowed"
+    TUI_CHOICE_HANDLER="$choice_handler"
+    TUI_CHOICE_PANE_ID="$pane_id"
+
+    pane_append "$pane_id" "$choice_text"
+    TUI_CHOICE_BUFFER_INDEX="$(tui_get_buffer_index_for_cursor "$pane_id")"
 
     log_info input "Entering choice mode"
 }
 
-handle_prompt_key() {
+tui_get_buffer_index_for_cursor() {
+    local pane_id="$1"
 
-    local key="$1"
-
-    if [[ "$key" == $'\n' ]]; then
-        log_info input "Prompt submitted"
-        INPUT_MODE="normal"
-    fi
+    printf '%s' "$((PANE_SCROLL[$pane_id] + PANE_CURSOR[$pane_id]))"
 }
 
-handle_choice_key() {
+tui_commit_line_at_index() {
+    local pane_id="$1"
+    local buffer_index="$2"
+    local text="$3"
 
-    local key="$1"
-
-    if [[ "$key" =~ ^[1-9]$ ]]; then
-        log_info input "Choice selected"
-        INPUT_MODE="normal"
-    fi
+    pane_replace_line "$pane_id" "$buffer_index" "$text" || return 1
+    pane_draw "$pane_id"
 }
