@@ -13,16 +13,6 @@ TUI_CHOICE_HANDLER=""
 TUI_CHOICE_PANE_ID=""
 TUI_CHOICE_BUFFER_INDEX=""
 
-test_prompt_handler() {
-    local value="$1"
-    pane_append "$PANE_ACTION_ID" "PROMPT_HANDLER:${value}"
-}
-
-test_choice_handler() {
-    local value="$1"
-    pane_append "$PANE_ACTION_ID" "CHOICE_HANDLER:${value}"
-}
-
 tui_handle_key() {
     local key="$1"
 
