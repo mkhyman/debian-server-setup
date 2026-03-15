@@ -59,6 +59,13 @@ tui_handle_normal_key() {
     local key="$1"
 
     case "$key" in
+        $'\e[A')
+            pane_scroll_up "$PANE_ACTION_ID"
+            ;;
+
+        $'\e[B')
+            pane_scroll_down "$PANE_ACTION_ID"
+            ;;
 
         [1-9])
             select_menu_item "$key"

@@ -227,23 +227,27 @@ pane_line_count() {
 #################################
 
 pane_scroll_up() {
-    local id=$1
-    if (( PANE_SCROLL[$id] > 0 )); then
-        ((PANE_SCROLL[$id]--))
-        pane_draw "$id"
+    local pane_id=$1
+    if (( PANE_SCROLL[$pane_id] > 0 )); then
+        ((PANE_SCROLL[$pane_id]--))
+        pane_draw "$pane_id"
     fi
 }
 
 pane_scroll_down() {
-    local id=$1
-    local height=${PANE_HEIGHT[$id]}
-    local total_lines=0
-    local IFS=$'\n'
-    local tmp
-    while read -r tmp; do ((total_lines++)); done <<< "${PANE_BUFFER[$id]}"
+    local pane_id="$1"
+    local total_lines
+    local max_scroll
 
-    if (( PANE_SCROLL[$id] < total_lines - height )); then
-        ((PANE_SCROLL[$id]++))
-        pane_draw "$id"
+    total_lines="$(pane_line_count "$pane_id")"
+    max_scroll=$(( total_lines - PANE_HEIGHT[$pane_id] ))
+
+    if (( max_scroll < 0 )); then
+        max_scroll=0
+    fi
+
+    if (( PANE_SCROLL[$pane_id] < max_scroll )); then
+        ((PANE_SCROLL[$pane_id]++))
+        pane_draw "$pane_id"
     fi
 }
